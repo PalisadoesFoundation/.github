@@ -1,3 +1,4 @@
+## Who We Are
 The Palisadoes Foundation’s open-source software projects help community groups organize their daily activities and more. A significant proportion of our software contributions come from university students studying software engineering. Participants often come from under-served communities or geographic areas and are sponsored through the various programs in which we participate. This prepares them for the competitive realities of the working world.
 
 ## Our Repositories
