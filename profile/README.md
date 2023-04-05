@@ -6,7 +6,7 @@ We have many repositories, but the most active ones are related to Talawa.
 
 ### The Talawa Projects
 
-The Talawa projects' software helps to create closer communities by assisting Community-Based Organizations manage their membership activities. It is made specially for religious organizations, charities and other non-profits.
+The Talawa projects' software helps to create closer communities by assisting Community-Based Organizations, like ourselves, manage their membership activities. It is made specially for religious organizations, charities and other non-profits.
 
 More information on the projects can be found on the [Talawa Website](https://docs.talawa.io).
 
