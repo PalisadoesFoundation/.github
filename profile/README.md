@@ -1,14 +1,6 @@
 ## Who We Are
 The [Palisadoes Foundation](https://www.palisadoes.org) sponsors open-source software projects to help community groups organize their daily activities and more. A significant proportion of our software contributions come from university students studying software engineering. Participants often come from under-served communities or geographic areas and are sponsored through the various programs in which we participate. This prepares them for the competitive realities of the working world.
 
-### Important Links
-Here are some sites you should visit:
-
-1. [Visit our YouTube Channel](https://www.youtube.com/@PalisadoesOrganization)
-2. [Visit our Website](https://www.palisadoes.org)
-
-Look around and see what we are all about!
-
 ## Our Repositories
 We have many repositories, but the most active ones are related to Talawa.
 
@@ -41,4 +33,3 @@ Each of our GitHub repositories contain important files in their topmost, or roo
 | CONFIGURATION.md | Some repositories have this file to specify the configurations necessary to enable various features to make Talawa run smoothly. |
 | ISSUE_GUIDELINES.md | If you find a bug or feel a new feature is necessary, then open an issue. Don't ask for permission to create one, we need your contributions! However, if you want to do the work yourself, don't start before being assigned the task as we only accept Pull Requests (PRs) from people who have been assigned the corresponding issue. |
 | PR_GUIDELINES.md | When you are ready submit new code this document will explain what we need in your Pull Request (PR). We take this guide seriously as it tells you how to make sure your code will meet our standards and be accepted. |
-
