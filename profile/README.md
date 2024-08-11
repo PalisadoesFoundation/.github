@@ -7,8 +7,7 @@ The [Palisadoes Foundation](https://www.palisadoes.org) sponsors open-source sof
 ### Our Videos
 
 Visit our [YouTube Channel playlists](https://www.youtube.com/@PalisadoesOrganization/playlists) for more insights
-
-The "[Getting Started - Developers](https://www.youtube.com/watch?v=YpBUoHxEeyg&list=PLv50qHwThlJUIzscg9a80a9-HmAlmUdCF&index=1)" videos are extremely helpful for new open source contributors.
+* The "[Getting Started - Developers](https://www.youtube.com/watch?v=YpBUoHxEeyg&list=PLv50qHwThlJUIzscg9a80a9-HmAlmUdCF&index=1)" videos are extremely helpful for new open source contributors.
 
 ## Our Repositories
 We have many repositories, but the most active ones are related to Talawa.
