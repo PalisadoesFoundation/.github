@@ -2,7 +2,7 @@
 The [Palisadoes Foundation](https://www.palisadoes.org) sponsors open-source software projects to help community groups organize their daily activities and more. A significant proportion of our software contributions come from university students studying software engineering. Participants often come from under-served communities or geographic areas and are sponsored through the various programs in which we participate. This prepares them for the competitive realities of the working world.
 
 ### Our Slack Community
-- [Join the community on Slack!](https://join.slack.com/t/thepalisadoes-dyb6419/shared_invite/zt-2nyudv86p-mvaW0ib~XV1ZB~dlXhE6vw)
+- [Join the community on Slack!](https://join.slack.com/t/thepalisadoes-dyb6419/shared_invite/zt-2qtl1wu8h-yi59DfoRtr4iS9RGtb1mRw)
 
 ### Our Videos
 
