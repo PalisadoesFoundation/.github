@@ -4,6 +4,10 @@ The [Palisadoes Foundation](https://www.palisadoes.org) sponsors open-source sof
 ### Our Slack Community
 - [Join the community on Slack!](https://join.slack.com/t/palisadoes-foundation/shared_invite/zt-32a3u0xna-BSXr1QzarhYmRADKpzIcrg)
 
+### Our Leaderboard
+Get insights into our active community!
+- Our Leaderboard shows a summary of our [contributor statistics](https://palisadoesfoundation.github.io/leaderboard/)
+
 ### Our Videos
 
 Visit our [YouTube Channel playlists](https://www.youtube.com/@PalisadoesOrganization/playlists) for more insights
