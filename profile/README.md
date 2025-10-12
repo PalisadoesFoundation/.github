@@ -29,6 +29,7 @@ Talawa software can be found in our multiple GitHub repositories. Here is a list
 | [Talawa Mobile](https://github.com/PalisadoesFoundation/talawa) | Our mobile application for an organization's membership can use to communicate with each other and their leadership |
 | [Talawa-Admin](https://github.com/PalisadoesFoundation/talawa-admin) | The web portal that administrators use to manage the mobile application and their volunteers |
 | [Talawa-API](https://github.com/PalisadoesFoundation/talawa-api) | The glue that makes the Talawa-Admin and Talawa mobile apps work together |
+| [Talawa-Plugin](https://github.com/PalisadoesFoundation/talawa-plugin) | Plugins for custom functionality for Talawa users |
 | [Talawa Docs](https://github.com/PalisadoesFoundation/talawa-docs) | The documentation portal that we use to create the Talawa website |
 
 ### Important GitHub Repository Files
