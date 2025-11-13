@@ -56,7 +56,7 @@ If you are ready to start contributing code right away, get ready!
 
 ### Who Can Contribute
 
-Unfortunately, because of recent abuse, we will generally assign issues to persons who have:
+Unfortunately, because of recent abuse, we will only be assigning issues or merging PRs for persons who have:
 
 1. More than 18 months of GitHub history
 2. Consistent code updates throughout their GitHub life, especially the most recent 12 months.
