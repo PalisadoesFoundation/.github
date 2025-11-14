@@ -19,6 +19,8 @@ If you are new to contributing to open source, please read the Open Source Guide
     - [Who Can Contribute](#who-can-contribute)
       - [The rationale](#the-rationale)
     - [Tackling Issues](#tackling-issues)
+    - [Issue Assignment](#issue-assignment)
+      - [Self-Assignment Commands](#self-assignment-commands)
     - [Submitting Code That Fixes Issues](#submitting-code-that-fixes-issues)
     - [Branching Strategy](#branching-strategy)
     - [Conflict Resolution](#conflict-resolution)
@@ -93,6 +95,16 @@ Each of our online GitHub repositories has a tab labeled `issues` which describe
 5. You can find unassigned issues by adding this text to the GitHub issue search bar `is:issue state:open no:assignee`
 
 Pleases read our [Issue Guidelines](ISSUE_GUIDELINES.md) file for more details.
+
+### Issue Assignment
+
+1. We enforce a limit of 2 open issue assignments per person across the entire organization to ensure fair distribution of work.
+1. New contributors are limited to 1 open issue assignment.
+
+#### Self-Assignment Commands
+
+- `/assign` - Assign an issue to yourself (if under the limit and not already assigned)
+- `/unassign` - Unassign yourself from an issue
 
 ### Submitting Code That Fixes Issues
 
