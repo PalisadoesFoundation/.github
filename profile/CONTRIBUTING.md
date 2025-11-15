@@ -79,6 +79,7 @@ This is a regrettable recent policy triggered by newly created accounts that:
 5. Repeatedly ignore PR requested changes from reviewers
 6. Resolve Code Rabbit suggestions without implementing them.
 7. Use AI to generate generic plans of action without an in-depth knowledge of the code base. This is not helpful for us.
+8. Delete all comments in the submitted edited files.
 
 As expected, we need contributors who are interested in coding with a proven track record. This is an unfortunate development but the recent abuse of the system has given us no choice.
 
