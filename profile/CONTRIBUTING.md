@@ -91,6 +91,10 @@ As expected, we need contributors who are interested in coding with a proven tra
 1. We are not against the use of AI as a productivity tool. We use it in many areas of our PR review process.
 1. We are against the use of it to create unnecessary overhead on our volunteers and systems, plus broken inefficient code.
 
+#### Consequences
+
+Persons who violate our expectations listed above will referred to our [Code of Conduct process](CODE_OF_CONDUCT.md).
+
 ### Tackling Issues
 
 Each of our online GitHub repositories has a tab labeled `issues` which describe the bugs and features we are working on.
