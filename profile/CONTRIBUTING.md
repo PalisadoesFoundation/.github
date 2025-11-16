@@ -18,6 +18,7 @@ If you are new to contributing to open source, please read the Open Source Guide
   - [Ways to Contribute](#ways-to-contribute)
     - [Who Can Contribute](#who-can-contribute)
       - [The rationale](#the-rationale)
+      - [Consequences](#consequences)
     - [Tackling Issues](#tackling-issues)
     - [Issue Assignment](#issue-assignment)
       - [Self-Assignment Commands](#self-assignment-commands)
@@ -158,4 +159,3 @@ When multiple developers are working on issues there is bound to be a conflict o
 ## Internships
 
 If you are participating in any of the various internship programs we are members of, then please read the [introduction guides on our documentation website](https://docs.talawa.io/docs/).
-
