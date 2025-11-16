@@ -17,8 +17,7 @@ If you are new to contributing to open source, please read the Open Source Guide
     - [Mailing List](#mailing-list)
   - [Ways to Contribute](#ways-to-contribute)
     - [Who Can Contribute](#who-can-contribute)
-      - [The rationale](#the-rationale)
-      - [Consequences](#consequences)
+    - [Unwelcome Repository Contributions](#unwelcome-repository-contributions)
     - [Tackling Issues](#tackling-issues)
     - [Issue Assignment](#issue-assignment)
       - [Self-Assignment Commands](#self-assignment-commands)
@@ -71,30 +70,28 @@ Unfortunately, because of recent abuse, we will only be assigning issues or merg
    2. Compelling arguments to show that you should considered, then let us know so that we can reconsider your request.
 3. If we cannot validate these criteria, you won’t be assigned. 
 
-#### The rationale
+As expected, we need contributors who are interested in coding with a proven track record.
 
-This is a regrettable recent policy triggered by newly created accounts that: 
+### Unwelcome Repository Contributions
 
-1. Use automation to blindly submit and update pull requests.
-2. SPAM our volunteers to be assigned issues to the exclusion of others.
-3. Frequently abandon issues after being assigned.
-4. Frequently close pull requests with ratios of merged to closed PRs approaching 10:1
-5. Repeatedly ignore PR requested changes from reviewers
-6. Repeatedly ignore answering any questions from reviewers.
-7. Resolve Code Rabbit suggestions without implementing them.
-8. Use AI to generate generic plans of action without an in-depth knowledge of the code base. This is not helpful for us.
-9. Delete all comments in the submitted edited files.
+We do not welcome the following activities:
 
-As expected, we need contributors who are interested in coding with a proven track record. This is an unfortunate development but the recent abuse of the system has given us no choice.
+1. Using automation to blindly submit and update pull requests.
+2. SPAMing our volunteers to be assigned issues to the exclusion of others.
+3. Frequent abandoning of issues after being assigned.
+4. Frequent closing of pull requests with ratios of merged to closed PRs approaching 10:1
+5. Repeatedly ignoring PR requested changes from reviewers and automated systems.
+   1. This incluces resolving requested changes without modifying code.
+6. Repeatedly ignoring answering any questions from reviewers.
+7. Using AI to generate generic plans of action without an in-depth knowledge of the code base. This is not helpful for us.
+8. Deleting all comments in the submitted edited files.
+
+Persons who violate our expectations listed above will referred to our [Code of Conduct process](CODE_OF_CONDUCT.md).
 
 **Note**
 
 1. We are not against the use of AI as a productivity tool. We use it in many areas of our PR review process.
 1. We are against the use of it to create unnecessary overhead on our volunteers and systems, plus broken inefficient code.
-
-#### Consequences
-
-Persons who violate our expectations listed above will referred to our [Code of Conduct process](CODE_OF_CONDUCT.md).
 
 ### Tackling Issues
 
@@ -159,3 +156,4 @@ When multiple developers are working on issues there is bound to be a conflict o
 ## Internships
 
 If you are participating in any of the various internship programs we are members of, then please read the [introduction guides on our documentation website](https://docs.talawa.io/docs/).
+
