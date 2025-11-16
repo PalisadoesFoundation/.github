@@ -65,8 +65,10 @@ Unfortunately, because of recent abuse, we will only be assigning issues or merg
 
 **Note:** There are caveats:
 
-1. If you do not meet these criteria but have successfully merged PRs in other open source repositories, then let us know so that we can reconsider your request.
-2. If we cannot validate these criteria, you won’t be assigned. 
+1. If you do not meet these criteria but have:
+   1. Successfully merged PRs in other open source repositories, then let us know so that we can reconsider your request.
+   2. Compelling arguments to show that you should considered, then let us know so that we can reconsider your request.
+3. If we cannot validate these criteria, you won’t be assigned. 
 
 #### The rationale
 
