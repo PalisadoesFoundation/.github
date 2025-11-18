@@ -22,6 +22,7 @@ If you are new to contributing to open source, please read the Open Source Guide
     - [Issue Assignment](#issue-assignment)
       - [Self-Assignment Commands](#self-assignment-commands)
     - [Submitting Code That Fixes Issues](#submitting-code-that-fixes-issues)
+    - [Using Git](#using-git)
     - [Branching Strategy](#branching-strategy)
     - [Conflict Resolution](#conflict-resolution)
   - [Internships](#internships)
@@ -130,11 +131,34 @@ Follow these steps when proposing a change to a repository:
 2. Fork the repository and branch off the `develop` branch. Most of our bugs and features are applied to this branch.
 3. Your newly forked repository can be cloned locally using `git clone <YOUR FORKED REPO URL>`.
 4. Make the Palisadoes Foundation's repo your `git upstream` for your local repo.
-5. Create a local branch with a different name than `develop` or `main`
+5. **Important:** Create a local branch with a different name than `develop` or `main`
 6. Make the desired changes to the project.
 7. Run the app and test your changes.
 8. If you've added code, then test suites must be added.
-9. Create a pull request following our [Pull Request Guidelines](PR_GUIDELINES.md)
+9. Commit your code to your local branch.
+    1.  **Note:** Many of our repositories automatically generate documentation with each commit in an `auto-docs` directory. This can often cause merge conflicts.
+    2.  You can resolve this using the following commands
+         ```bash
+         # Reset your local auto-docs to match origin/<UPSTREAM BRANCH NAME>
+         $ git checkout origin/<UPSTREAM BRANCH NAME> -- PATH/TO/auto-docs
+
+         # Make sure Git doesn’t flip line endings (Windows users only)
+         $ git config core.autocrlf false
+
+         # Reinstall dependencies and regenerate docs cleanly:
+         npm ci
+         npm run generate-docs
+         ```
+    3.  You'll now be able to run a clean commit.
+10. Merge your code with the latest upstream
+11. Rectify any potential conflcits
+    
+12. Create a pull request following our [Pull Request Guidelines](PR_GUIDELINES.md)
+
+### Using Git
+
+If you are not familiar with using `git`, please check our tutorials here:
+- https://developer.palisadoes.org/docs
 
 ### Branching Strategy
 
