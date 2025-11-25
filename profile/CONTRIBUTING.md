@@ -87,6 +87,7 @@ We do not welcome the following activities:
 7. Using AI to generate generic plans of action without an in-depth knowledge of the code base. This is not helpful for us.
 8. Deleting all comments in the submitted edited files.
 9. Repeatedly submitting irrelevant files for PR review after being made aware of the practice.
+10. Repeatedly dismissing or resolving suggestions without modifying code.
 
 Persons who violate our expectations listed above will referred to our [Code of Conduct process](CODE_OF_CONDUCT.md).
 
