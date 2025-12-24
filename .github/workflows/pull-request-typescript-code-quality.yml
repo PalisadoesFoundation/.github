@@ -1,0 +1,125 @@
+name: Pull Request TypeScript Code Quality
+
+on:
+  workflow_call:
+
+jobs:
+  Code-Quality-Checks:
+    name: Performs linting, formatting, type-checking, unused file detection, checking for different source and target branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'pnpm'
+
+      - name: Prepare dependency store
+        run: pnpm fetch
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Count number of lines
+        run: |
+          chmod +x ./.github/workflows/scripts/countline.py
+          ./.github/workflows/scripts/countline.py --lines 600 \
+            --exclude_files \
+            src/screens/LoginPage/LoginPage.tsx \
+            src/GraphQl/Queries/Queries.ts \
+            src/screens/OrgList/OrgList.tsx \
+            src/GraphQl/Mutations/mutations.ts \
+            src/components/EventListCard/EventListCardModals.tsx \
+            src/components/TagActions/TagActionsMocks.tsx \
+            src/utils/interfaces.ts \
+            src/screens/MemberDetail/MemberDetail.tsx \
+            src/components/OrgPostCard/OrgPostCard.tsx \
+            src/components/UsersTableItem/UsersTableItem.tsx \
+            src/components/UserPortal/ChatRoom/ChatRoom.tsx \
+            src/screens/UserPortal/Volunteer/UpcomingEvents/UpcomingEvents.tsx \
+            src/screens/OrganizationActionItems/ActionItemModal/ActionItemModal.tsx \
+            src/shared-components/postCard/PostCard.tsx
+
+      - name: Get changed TypeScript files
+        id: changed-files
+        run: |
+          BASE_SHA=$(git merge-base ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+
+          ALL_CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA ${{ github.event.pull_request.head.sha }} | tr '\n' ' ')
+          echo "all_changed_files=${ALL_CHANGED_FILES}" >> $GITHUB_OUTPUT
+
+          ALL_CHANGED_FILES_COUNT=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA ${{ github.event.pull_request.head.sha }} | wc -l | tr -d ' ')
+          echo "all_changed_files_count=$ALL_CHANGED_FILES_COUNT" >> $GITHUB_OUTPUT
+
+          if [ "$ALL_CHANGED_FILES_COUNT" -gt 0 ]; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "only_changed=false" >> $GITHUB_OUTPUT
+
+      - name: Check formatting
+        if: steps.changed-files.outputs.only_changed != 'true'
+        run: pnpm format:check
+
+      - name: Run formatting if check fails
+        if: failure()
+        run: pnpm format:fix
+
+      - name: Check for type errors
+        if: steps.changed-files.outputs.only_changed != 'true'
+        run: pnpm typecheck
+
+      - name: Check for linting errors in modified files
+        if: steps.changed-files.outputs.only_changed != 'true'
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: pnpm exec eslint ${CHANGED_FILES}
+
+      - name: Check for TSDoc comments
+        run: pnpm check-tsdoc
+
+      - name: Check for localStorage Usage
+        run: pnpm exec tsx scripts/githooks/check-localstorage-usage.ts --scan-entire-repo
+
+      - name: Compare translation files
+        run: |
+          chmod +x .github/workflows/scripts/compare_translations.py
+          python .github/workflows/scripts/compare_translations.py --directory public/locales
+
+      - name: Get changed source files
+        id: changed-src
+        run: |
+          BASE_SHA=$(git merge-base ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          CHANGED=$(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" ${{ github.event.pull_request.head.sha }} \
+            | grep -E '^src/.*\.(ts|tsx|js|jsx)$' | tr '\n' ' ' || true)
+          echo "files=$CHANGED" >> $GITHUB_OUTPUT
+          if [ -z "$CHANGED" ]; then
+            echo "none=true" >> $GITHUB_OUTPUT
+          else
+            echo "none=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if the source and target branches are different
+        if: ${{ github.event.pull_request.base.ref == github.event.pull_request.head.ref }}
+        run: |
+          echo "Source Branch ${{ github.event.pull_request.head.ref }}"
+          echo "Target Branch ${{ github.event.pull_request.base.ref }}"
+          echo "Error: Source and Target Branches are the same. Please ensure they are different."
+          echo "Error: Close this PR and try again."
+          exit 1
+
+      - name: Check for unused files and exports in src/ and docs/src
+        run: pnpm knip --include files,exports,nsExports,nsTypes
