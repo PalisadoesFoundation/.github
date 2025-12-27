@@ -1,0 +1,54 @@
+name: AutoDocs
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '24.x'
+      pnpm-version:
+        required: false
+        type: string
+        default: '9'
+
+jobs:
+  autodocs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'pnpm'
+
+      - name: Prepare dependency store
+        run: pnpm fetch
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Generate documentation
+        run: pnpm run generate-docs
+
+      - name: Check for uncommitted doc changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Documentation files are outdated or missing."
+            echo "Please run 'pnpm run generate-docs' locally and commit the updated files."
+            git status --porcelain
+            exit 1
+          else
+            echo "Documentation is up to date."
+          fi
