@@ -1,0 +1,65 @@
+name: Count Changed Files
+
+on:
+  workflow_call:
+    inputs:
+      max-files:
+        required: false
+        type: number
+        default: 100
+      exclude-markdown:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  count-changed-files:
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    name: Checks if number of files changed is acceptable
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Count changed files
+        id: count
+        run: |
+          # Skip if not a PR
+          if [ -z "${{ github.event.pull_request.base.sha }}" ]; then
+            echo "count=0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          BASE_SHA=$(git merge-base \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}")
+
+          FILES=$(git diff --name-only --diff-filter=ACMRT \
+            "$BASE_SHA" "${{ github.event.pull_request.head.sha }}")
+
+          if [ "${{ inputs.exclude-markdown }}" = "true" ]; then
+            FILES=$(echo "$FILES" | grep -v -i '\.md$' || true)
+          fi
+
+          COUNT=$(echo "$FILES" | sed '/^\s*$/d' | wc -l | tr -d ' ')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+
+      - name: Echo number of changed files
+        run: |
+          echo "Number of changed files: ${{ steps.count.outputs.count }}"
+
+      - name: Fail if file count exceeds limit
+        if: steps.count.outputs.count > inputs.max-files
+        run: |
+          echo "::error::Too many files changed in this pull request."
+          echo ""
+          echo "Changed files: ${{ steps.count.outputs.count }}"
+          echo "Allowed maximum: ${{ inputs.max-files }}"
+          echo ""
+          echo "Possible issues:"
+          echo "- PR may be created from an incorrect source branch."
+          echo "- Target branch may be incorrect (use develop if applicable)."
+          exit 1
