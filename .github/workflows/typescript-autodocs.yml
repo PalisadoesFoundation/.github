@@ -2,6 +2,23 @@ name: AutoDocs
 
 on:
   workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: "24.x"
+        required: false
+
+      pnpm-version:
+        description: pnpm version to use
+        type: string
+        default: "10.4.1"
+        required: false
+
+      docs-script:
+        type: string
+        default: "generate-docs"
+        required: false
+
 
 jobs:
   autodocs:
@@ -16,13 +33,13 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.4.1
+          version: ${{ inputs.pnpm-version }}
           run_install: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.x
+          node-version: ${{ inputs.node-version }}
           cache: pnpm
 
       - name: Prepare dependency store
