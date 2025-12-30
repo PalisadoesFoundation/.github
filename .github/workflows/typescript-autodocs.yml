@@ -14,12 +14,6 @@ on:
         default: "10.4.1"
         required: false
 
-      docs-script:
-        type: string
-        default: "generate-docs"
-        required: false
-
-
 jobs:
   autodocs:
     runs-on: ubuntu-latest
