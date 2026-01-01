@@ -2,16 +2,6 @@ name: Mark stale issues and pull requests
 
 on:
   workflow_call:
-    inputs:
-      days_before_stale:
-        type: number
-        default: 10
-      days_before_close:
-        type: number
-        default: 360
-      operations_per_run:
-        type: number
-        default: 200
 
 permissions:
   issues: write
@@ -50,11 +40,11 @@ jobs:
           stale-issue-label: no-issue-activity
           stale-pr-label: no-pr-activity
 
-          days-before-stale: ${{ inputs.days_before_stale }}
-          days-before-close: ${{ inputs.days_before_close }}
+          days-before-stale: 10
+          days-before-close: 360
 
           remove-stale-when-updated: true
           exempt-all-milestones: true
           exempt-pr-labels: wip
           exempt-issue-labels: wip
-          operations-per-run: ${{ inputs.operations_per_run }}
+          operations-per-run: 200
