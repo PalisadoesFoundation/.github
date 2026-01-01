@@ -1,0 +1,60 @@
+name: Mark stale issues and pull requests
+
+on:
+  workflow_call:
+    inputs:
+      days_before_stale:
+        type: number
+        default: 10
+      days_before_close:
+        type: number
+        default: 360
+      operations_per_run:
+        type: number
+        default: 200
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Process Stale Issues and PRs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run stale bot
+        uses: actions/stale@v10
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          stale-issue-message: >
+            This issue did not get any activity in the past 10 days and will be
+            closed in 360 days if no update occurs. Please check if the develop
+            branch has fixed it and report again or close the issue.
+
+          stale-pr-message: >
+            This pull request did not get any activity in the past 10 days and
+            will be closed in 360 days if no update occurs. Please verify it has
+            no conflicts with the develop branch and rebase if needed.
+
+          close-issue-message: >
+            This issue did not get any activity in the past 360 days and thus
+            has been closed. Please check if the newest release or develop
+            branch has it fixed.
+
+          close-pr-message: >
+            This pull request did not get any activity in the past 360 days and
+            thus has been closed.
+
+          stale-issue-label: no-issue-activity
+          stale-pr-label: no-pr-activity
+
+          days-before-stale: ${{ inputs.days_before_stale }}
+          days-before-close: ${{ inputs.days_before_close }}
+
+          remove-stale-when-updated: true
+          exempt-all-milestones: true
+          exempt-pr-labels: wip
+          exempt-issue-labels: wip
+          operations-per-run: ${{ inputs.operations_per_run }}
