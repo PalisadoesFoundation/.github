@@ -1,0 +1,63 @@
+name: Issue Auto Label (Reusable)
+
+on:
+  workflow_call:
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  opened-issue-label:
+    name: Adding Issue Label
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout only label config
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/workflows/auto-label.json5
+          sparse-checkout-cone-mode: false
+
+      - name: Auto label issue based on config
+        uses: Renato66/auto-label@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post-process labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const { data: labels } =
+              await github.rest.issues.listLabelsOnIssue({
+                owner,
+                repo,
+                issue_number
+              });
+
+            const hasAny = (names) =>
+              labels.some(l => names.includes(l.name));
+
+            if (hasAny(["dependencies"])) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: ["good first issue", "security"]
+              });
+            } else if (hasAny(["security", "ui/ux", "test", "ci/cd"])) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: ["good first issue"]
+              });
+            }
