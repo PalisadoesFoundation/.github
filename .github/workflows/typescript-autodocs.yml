@@ -13,6 +13,10 @@ on:
         type: string
         default: "10.4.1"
         required: false
+  
+  # Direct trigger for this repository
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   autodocs:

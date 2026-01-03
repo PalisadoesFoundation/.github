@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: ignore-sensitive-files-pr
+  
+  # Direct trigger for this repository
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   check-sensitive-files:
