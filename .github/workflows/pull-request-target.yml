@@ -2,9 +2,6 @@ name: PR Target Workflow
 
 on:
   workflow_call:
-    secrets:
-      GITHUB_TOKEN:
-        required: true
   
   # Direct trigger for this repository
   pull_request_target:
