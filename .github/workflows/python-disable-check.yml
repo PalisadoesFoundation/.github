@@ -18,6 +18,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate PR context
+        run: |
+          if [ -z "${{ github.event.pull_request.base.sha }}" ]; then
+            echo "Error: This workflow must be called from a pull_request event context"
+            echo "It requires pull_request.base.sha and pull_request.head.sha to determine changed files"
+            exit 1
+          fi
+
       - name: Get changed files
         id: changed-files
         run: |

@@ -12,12 +12,12 @@
 ##############################################################################
 
 # Code Formatting
-black
+black==25.1.0
 
 # Docstring Checking
-pydocstyle
-docstring_parser
+pydocstyle==6.3.0
+docstring_parser==0.17.0
 
 # Linting
-flake8
-flake8-docstrings
+flake8==7.3.0
+flake8-docstrings==1.7.0
