@@ -1,0 +1,152 @@
+name: Python Checks
+
+on:
+  workflow_call:
+    inputs:
+      repo-type:
+        required: true
+        type: string
+        description: 'Repository type (api, admin, mobile, or plugin)'
+      check-directories:
+        required: false
+        type: string
+        default: '.github'
+        description: 'Space-separated directories to check (e.g., ".github scripts" or ".github plugins scripts")'
+
+jobs:
+  black-formatter:
+    name: Black Formatter Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/workflows/config/requirements.txt
+
+      - name: Run Black formatter check
+        run: |
+          black --check .
+
+  flake8-linter:
+    name: Flake8 Linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/workflows/config/requirements.txt
+
+      - name: Run Flake8
+        run: |
+          flake8 --docstring-convention google --ignore E402,E722,E203,F401,W503 ${{ inputs.check-directories }}
+
+  pydocstyle-check:
+    name: Pydocstyle Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/workflows/config/requirements.txt
+
+      - name: Run Pydocstyle
+        run: |
+          pydocstyle --convention=google --add-ignore=D415,D205 ${{ inputs.check-directories }}
+
+  docstring-compliance:
+    name: Docstring Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/workflows/config/requirements.txt
+
+      - name: Download check_docstrings.py
+        run: |
+          mkdir -p /tmp/scripts
+          curl -sSL -o /tmp/scripts/check_docstrings.py \
+            https://raw.githubusercontent.com/PalisadoesFoundation/.github/main/.github/workflows/scripts/check_docstrings.py
+
+      - name: Run docstring compliance check
+        run: |
+          python /tmp/scripts/check_docstrings.py --directories ${{ inputs.check-directories }}
+
+  disable-statements-check:
+    name: Disable Statements Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate PR context
+        run: |
+          if [ -z "${{ github.event.pull_request.base.sha }}" ]; then
+            echo "Error: This check must be called from a pull_request event context"
+            echo "It requires pull_request.base.sha and pull_request.head.sha to determine changed files"
+            exit 1
+          fi
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get the base branch ref
+          BASE_SHA=$(git merge-base ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+
+          # Get all changed files
+          ALL_CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA ${{ github.event.pull_request.head.sha }} | tr '\n' ' ')
+          echo "all_changed_files=${ALL_CHANGED_FILES}" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download disable_statements_check.py
+        run: |
+          mkdir -p /tmp/scripts
+          curl -sSL -o /tmp/scripts/disable_statements_check.py \
+            https://raw.githubusercontent.com/PalisadoesFoundation/.github/main/.github/workflows/scripts/disable_statements_check.py
+
+      - name: Run disable statements check
+        run: |
+          # Map repo types to script-compatible values (script only accepts 'api' or 'admin')
+          REPO_TYPE="${{ inputs.repo-type }}"
+          if [[ "$REPO_TYPE" == "mobile" || "$REPO_TYPE" == "plugin" ]]; then
+            REPO_TYPE="admin"
+          fi
+          python /tmp/scripts/disable_statements_check.py --repo=$REPO_TYPE --files ${{ steps.changed-files.outputs.all_changed_files }}

@@ -1,0 +1,52 @@
+name: Python Disable Statements Check
+
+on:
+  workflow_call:
+    inputs:
+      repo-type:
+        required: true
+        type: string
+        description: 'Repository type (api or admin)'
+
+jobs:
+  check-disable-statements:
+    name: Check for disable statements
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate PR context
+        run: |
+          if [ -z "${{ github.event.pull_request.base.sha }}" ]; then
+            echo "Error: This workflow must be called from a pull_request event context"
+            echo "It requires pull_request.base.sha and pull_request.head.sha to determine changed files"
+            exit 1
+          fi
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get the base branch ref
+          BASE_SHA=$(git merge-base ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+
+          # Get all changed files
+          ALL_CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA ${{ github.event.pull_request.head.sha }} | tr '\n' ' ')
+          echo "all_changed_files=${ALL_CHANGED_FILES}" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download disable_statements_check.py
+        run: |
+          mkdir -p /tmp/scripts
+          curl -sSL -o /tmp/scripts/disable_statements_check.py \
+            https://raw.githubusercontent.com/PalisadoesFoundation/.github/main/.github/workflows/scripts/disable_statements_check.py
+
+      - name: Run disable statements check
+        run: |
+          python /tmp/scripts/disable_statements_check.py --repo=${{ inputs.repo-type }} --files ${{ steps.changed-files.outputs.all_changed_files }}
