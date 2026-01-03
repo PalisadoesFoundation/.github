@@ -2,6 +2,10 @@ name: Issue Assignment – Remove Unapproved Label
 
 on:
   workflow_call:
+  
+  # Direct trigger for this repository
+  issues:
+    types: [assigned]
 
 permissions:
   contents: read

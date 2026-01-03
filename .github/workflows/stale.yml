@@ -2,6 +2,10 @@ name: Mark stale issues and pull requests
 
 on:
   workflow_call:
+  
+  # Direct trigger for this repository - run daily at 00:00 UTC
+  schedule:
+    - cron: '0 0 * * *'
 
 permissions:
   issues: write

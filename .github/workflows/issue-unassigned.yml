@@ -5,6 +5,10 @@ on:
     secrets:
       GITHUB_TOKEN:
         required: true
+  
+  # Direct trigger for this repository
+  issues:
+    types: [unassigned]
 
 jobs:
   add-unapproved-label:

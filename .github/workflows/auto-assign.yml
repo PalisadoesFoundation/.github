@@ -5,6 +5,10 @@ on:
     secrets:
       ORG_ACCESS_TOKEN:
         required: true
+  
+  # Direct trigger for this repository
+  issue_comment:
+    types: [created]
 
 env:
   MAX_OPEN_ASSIGNMENTS: 2
