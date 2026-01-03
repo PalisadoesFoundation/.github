@@ -2,10 +2,6 @@ name: CodeRabbit Review Enforcement (Reusable)
 
 on:
   workflow_call:
-    secrets:
-      GITHUB_TOKEN:
-        required: true
-
 jobs:
   check-coderabbit-approval:
     name: Check CodeRabbit Approval
