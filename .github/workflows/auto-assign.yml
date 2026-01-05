@@ -184,7 +184,7 @@ jobs:
               const allowedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
               
               // Special handling: Allow CodeRabbit bot even with NONE association
-              const isCodeRabbitBot = issue.user.login === 'coderabbitai' && issue.user.type === 'Bot';
+              const isCodeRabbitBot = (issue.user.login === 'app/coderabbitai' || issue.user.login === 'coderabbitai') && issue.user.type === 'Bot';
               
               if (!allowedAssociations.includes(issueCreatorAssociation) && !isCodeRabbitBot) {
                 await github.rest.issues.createComment({
