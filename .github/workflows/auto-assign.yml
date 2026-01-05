@@ -5,7 +5,7 @@ on:
     secrets:
       ORG_ACCESS_TOKEN:
         required: true
-  
+
   # Direct trigger for this repository
   issue_comment:
     types: [created]
@@ -180,10 +180,13 @@ jobs:
               }           
               console.log(`Issue #${issueNumber} creator ${issueCreator} has association: ${issueCreatorAssociation}`);
               
-              // Only allow /assign on issues created by OWNER, MEMBER, COLLABORATOR or CONTRIBUTOR
+              // Allow /assign on issues created by OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR, or CodeRabbit bot
               const allowedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
               
-              if (!allowedAssociations.includes(issueCreatorAssociation)) {
+              // Special handling: Allow CodeRabbit bot even with NONE association
+              const isCodeRabbitBot = issue.user.login === 'coderabbitai' && issue.user.type === 'Bot';
+              
+              if (!allowedAssociations.includes(issueCreatorAssociation) && !isCodeRabbitBot) {
                 await github.rest.issues.createComment({
                   owner,
                   repo,
@@ -194,7 +197,11 @@ jobs:
                 return;
               }
               
-              console.log(`Issue creator ${issueCreator} has sufficient association (${issueCreatorAssociation}), allowing /assign for ${user}`);
+              if (isCodeRabbitBot) {
+                console.log(`Issue creator is CodeRabbit bot, allowing /assign for ${user}`);
+              } else {
+                console.log(`Issue creator ${issueCreator} has sufficient association (${issueCreatorAssociation}), allowing /assign for ${user}`);
+              }
             }
 
             // Log the type of user association
