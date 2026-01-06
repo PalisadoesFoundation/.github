@@ -71,9 +71,15 @@ jobs:
               throw new Error(`Invalid MAX_OPEN_ASSIGNMENTS value: "${process.env.MAX_OPEN_ASSIGNMENTS}". Must be a positive integer.`);
             }            
 
-            // Ignore bots only
-            if (comment.user.type === "Bot") {
-              console.log("Ignoring bot");
+            // Define the Coder Rabbit user. It needs to be an exception
+            const isCodeRabbitBot = (issue.user.login === 'app/coderabbitai' || 
+                        issue.user.login === 'coderabbitai' || 
+                        issue.user.login === 'coderabbitai[bot]') && 
+                      issue.user.type === 'Bot';
+
+            // Ignore bot comments UNLESS the issue was created by CodeRabbit
+            if (comment.user.type === "Bot" && !isCodeRabbitBot) {
+              console.log("Ignoring bot comment on non-CodeRabbit issue");
               return;
             }
 
@@ -182,12 +188,6 @@ jobs:
               
               // Allow /assign on issues created by OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR, or CodeRabbit bot
               const allowedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
-              
-              // Special handling: Allow CodeRabbit bot even with NONE association
-              const isCodeRabbitBot = (issue.user.login === 'app/coderabbitai' || 
-                          issue.user.login === 'coderabbitai' || 
-                          issue.user.login === 'coderabbitai[bot]') && 
-                         issue.user.type === 'Bot';
               
               if (!allowedAssociations.includes(issueCreatorAssociation) && !isCodeRabbitBot) {
                 await github.rest.issues.createComment({
