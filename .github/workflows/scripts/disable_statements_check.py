@@ -2,16 +2,22 @@
 """Consolidated script to check for disable statements in code files.
 
 This script checks for:
-- eslint-disable comments (Admin-only)
-- biome-ignore comments (API-only)
-- @ts-ignore comments (API-only)
-- check-sanitization-disable comments (API-only)
-- istanbul ignore comments (shared)
-- it.skip statements in test files (shared)
+- eslint-disable comments
+- biome-ignore comments
+- @ts-ignore comments
+- check-sanitization-disable comments
+- istanbul ignore comments
+- it.skip statements in test files
+
+The script automatically detects which patterns exist in your files.
+No repository-type specification is needed - patterns are naturally specific.
 
 Usage:
+    python disable_statements_check.py --files file1.js file2.ts
+    python disable_statements_check.py --directory src/
+    
+    # --repo parameter is deprecated but still accepted for backward compatibility
     python disable_statements_check.py --repo=api --files file1.js file2.ts
-    python disable_statements_check.py --repo=admin --directory src/
 """
 
 import argparse
@@ -179,13 +185,11 @@ class DisableStatementsChecker:
 
         return violations
 
-    def check_file(self, file_path: str, repo: str = "admin") -> list[str]:
+    def check_file(self, file_path: str) -> list[str]:
         """Check a single file for disable statements.
 
         Args:
             file_path: Path to the file to check.
-            repo: Repository type ("api" or "admin") - determines which
-                checks to run.
 
         Returns:
             violations: List of violation messages.
@@ -210,7 +214,8 @@ class DisableStatementsChecker:
 
         violations = []
 
-        # Auto-discover check methods
+        # Auto-discover and run all check methods
+        # Patterns are naturally specific - they only match in files where they exist
         for name, method in inspect.getmembers(
             self, predicate=inspect.ismethod
         ):
@@ -219,16 +224,6 @@ class DisableStatementsChecker:
                 "check_files",
                 "check_directory",
             ):
-                # Skip repo-specific checks
-                if repo == "api" and name == "check_eslint_disable":
-                    continue
-                if repo == "admin" and name in (
-                    "check_biome_disable",
-                    "check_ts_ignore",
-                    "check_sanitization_disable",
-                ):
-                    continue
-
                 # Skip coverage checks for test files
                 if is_test_file and name == "check_istanbul_ignore":
                     continue
@@ -237,32 +232,26 @@ class DisableStatementsChecker:
 
         return violations
 
-    def check_files(
-        self, file_paths: list[str], repo: str = "admin"
-    ) -> list[str]:
+    def check_files(self, file_paths: list[str]) -> list[str]:
         """Check multiple files for disable statements.
 
         Args:
             file_paths: List of file paths to check.
-            repo: Repository type ("api" or "admin").
 
         Returns:
             all_violations: List of violation messages from all files.
         """
         all_violations = []
         for file_path in file_paths:
-            violations = self.check_file(file_path, repo=repo)
+            violations = self.check_file(file_path)
             all_violations.extend(violations)
         return all_violations
 
-    def check_directory(
-        self, directory: str, repo: str = "admin"
-    ) -> list[str]:
+    def check_directory(self, directory: str) -> list[str]:
         """Check all relevant files in a directory.
 
         Args:
             directory: Directory path to check recursively.
-            repo: Repository type ("api" or "admin").
 
         Returns:
             violations: List of violation messages from all files in directory.
@@ -273,7 +262,7 @@ class DisableStatementsChecker:
         for ext in extensions:
             file_paths.extend(Path(directory).rglob(f"*{ext}"))
 
-        return self.check_files([str(p) for p in file_paths], repo=repo)
+        return self.check_files([str(p) for p in file_paths])
 
 
 def main() -> None:
@@ -295,25 +284,35 @@ def main() -> None:
     parser.add_argument(
         "--repo",
         choices=["api", "admin"],
-        default="admin",
-        help="Repository type (determines which checks to run)",
+        default=None,
+        help="[DEPRECATED] Repository type (no longer needed - kept for backward compatibility)",
     )
 
     args = parser.parse_args()
 
+    # Show deprecation warning if --repo is used
+    if args.repo is not None:
+        print(
+            "Warning: --repo parameter is deprecated and no longer needed.\n"
+            "The script now automatically runs all checks.\n"
+            "Patterns are naturally specific to their respective codebases.\n",
+            file=sys.stderr,
+        )
+
     checker = DisableStatementsChecker()
 
+    # Note: repo parameter is ignored (kept for backward compatibility)
     if args.files:
-        violations = checker.check_files(args.files, repo=args.repo)
+        violations = checker.check_files(args.files)
     else:
-        violations = checker.check_directory(args.directory, repo=args.repo)
+        violations = checker.check_directory(args.directory)
 
     if violations:
         for violation in violations:
             print(violation)
         sys.exit(1)
     else:
-        print(f"No disable statements found ({args.repo} checks).")
+        print("No disable statements found.")
 
 
 if __name__ == "__main__":
