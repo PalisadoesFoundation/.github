@@ -301,13 +301,25 @@ jobs:
             // For /assign
             const currentAssignees = issue.assignees.map(a => a.login);
             if (currentAssignees.includes(user)) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: `⚠️ @${user} You are already assigned to this issue.`,
+              });
               console.log(`${user} is already assigned, skipping.`);
               return;
             }
             if (currentAssignees.length > 0) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: `⚠️ @${user} This issue is already assigned. Please choose a different issue.`,
+              });
               console.log("Issue already assigned to someone else, skipping.");
               return;
-            }   
+            }
 
             console.log(`Checking org-wide assignments for ${user}...`);
             let totalAssigned = 0;
