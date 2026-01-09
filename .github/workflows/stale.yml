@@ -20,7 +20,10 @@ jobs:
       - name: Run stale bot
         uses: actions/stale@v10
         with:
-          # repo-token: ${{ secrets.GITHUB_TOKEN }}
+          # ORG_ACCESS_TOKEN must have the following scopes:
+          # - repo (or public_repo if using public repos only)
+          # - org:read (to enumerate organization repos)
+          github-token: ${{ secrets.ORG_ACCESS_TOKEN }}
 
           stale-issue-message: >
             This issue did not get any activity in the past 10 days and will be
