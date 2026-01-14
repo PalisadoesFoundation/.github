@@ -69,8 +69,25 @@ runs:
                 if (isRateLimit && error.response && error.response.headers) {
                   const retryAfter = error.response.headers['retry-after'];
                   if (retryAfter) {
-                     // Retry-After is usually in seconds
-                     waitTime = Math.max(waitTime, parseInt(retryAfter, 10) * 1000);
+                     // Retry-After can be numeric (seconds) or HTTP-date string
+                     const numericValue = parseInt(retryAfter, 10);
+                     let retryAfterMs;
+                     
+                     if (!isNaN(numericValue) && String(numericValue) === retryAfter.trim()) {
+                       // Numeric value in seconds
+                       retryAfterMs = numericValue * 1000;
+                     } else {
+                       // HTTP-date string - parse and compute milliseconds from now
+                       const retryDate = Date.parse(retryAfter);
+                       if (!isNaN(retryDate)) {
+                         retryAfterMs = Math.max(0, retryDate - Date.now());
+                       }
+                     }
+                     
+                     // Only update waitTime if we got a valid number
+                     if (retryAfterMs !== undefined && !isNaN(retryAfterMs)) {
+                       waitTime = Math.max(waitTime, retryAfterMs);
+                     }
                   }
                 }
 

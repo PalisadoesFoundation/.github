@@ -48,5 +48,5 @@ jobs:
           grace-period-days: ${{ github.event.inputs.grace-period-days || '7' }}
           # Uncomment to customize the comment message:
           # comment-message: |
-          #   Hi @{assignee}, this issue has been unassigned due to inactivity.
+          #   Hi {assignee}, this issue has been unassigned due to inactivity.
           #   Feel free to reassign yourself if you plan to continue.
