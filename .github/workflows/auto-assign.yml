@@ -227,10 +227,6 @@ jobs:
               console.log(`DEBUG - issueCreatorAssociation = ${issueCreatorAssociation}`);
 
               if (!allowedAssociations.includes(issueCreatorAssociation) && !isCodeRabbitBot) {
-                // ... existing code
-              }
-
-              if (!allowedAssociations.includes(issueCreatorAssociation) && !isCodeRabbitBot) {
                 await github.rest.issues.createComment({
                   owner,
                   repo,
