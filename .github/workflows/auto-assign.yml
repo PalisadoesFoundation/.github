@@ -171,6 +171,31 @@ jobs:
 
             // Issues created by non-members require manual intervention by members for auto-assignment.
             if (isAssign) {
+
+              // Already assigned
+              const currentAssignees = issue.assignees.map(a => a.login);
+              if (currentAssignees.includes(user)) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  body: `⚠️ @${user} You are already assigned to this issue.`,
+                });
+                console.log(`${user} is already assigned, skipping.`);
+                return;
+              }
+              if (currentAssignees.length > 0) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  body: `⚠️ @${user} This issue is already assigned. Please choose a different issue.`,
+                });
+                console.log("Issue already assigned to someone else, skipping.");
+                return;
+              }
+
+              // Evaluate the permissions to do assignments
               const issueCreator = issue.user.login;
               let issueCreatorAssociation;
 
@@ -295,29 +320,6 @@ jobs:
                   console.error(`Failed to create error comment for user ${user} on issue #${issueNumber}:`, commentError);
                 }
               }
-              return;
-            }
-
-            // For /assign
-            const currentAssignees = issue.assignees.map(a => a.login);
-            if (currentAssignees.includes(user)) {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                body: `⚠️ @${user} You are already assigned to this issue.`,
-              });
-              console.log(`${user} is already assigned, skipping.`);
-              return;
-            }
-            if (currentAssignees.length > 0) {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                body: `⚠️ @${user} This issue is already assigned. Please choose a different issue.`,
-              });
-              console.log("Issue already assigned to someone else, skipping.");
               return;
             }
 
