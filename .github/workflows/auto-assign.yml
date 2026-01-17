@@ -189,7 +189,7 @@ jobs:
                   owner,
                   repo,
                   issue_number: issueNumber,
-                  body: `⚠️ @${user} This issue is already assigned. Please choose a different issue.`,
+                  body: `⚠️ @${user} This issue is already assigned, possibly because a prerequisite or parent issue is incomplete. Please choose a different issue.`,
                 });
                 console.log("Issue already assigned to someone else, skipping.");
                 return;
