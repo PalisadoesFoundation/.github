@@ -12,7 +12,7 @@
 ##############################################################################
 
 # Code Formatting
-black
+black==26.1.0
 
 # Docstring Checking
 pydocstyle
@@ -21,3 +21,6 @@ docstring_parser
 # Linting
 flake8
 flake8-docstrings
+
+# Testing
+pytest

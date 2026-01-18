@@ -15,7 +15,7 @@ No repository-type specification is needed - patterns are naturally specific.
 Usage:
     python disable_statements_check.py --files file1.js file2.ts
     python disable_statements_check.py --directory src/
-    
+
     # --repo parameter is deprecated but still accepted for backward compatibility
     python disable_statements_check.py --repo=api --files file1.js file2.ts
 """
