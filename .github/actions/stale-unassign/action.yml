@@ -15,8 +15,8 @@ inputs:
     description: 'Run without making changes. Logs intended actions.'
     required: false
     default: 'false'
-  stale-label:
-    description: 'Label that marks issues as stale'
+  exclusion-labels:
+    description: 'Comma-separated list of labels that mark issues for exclusion (e.g., "no-issue-activity,on-hold,waiting-for-maintainer")'
     required: false
     default: 'no-issue-activity'
   comment-message:
@@ -41,7 +41,7 @@ runs:
       env:
         GRACE_PERIOD_DAYS: ${{ inputs.grace-period-days }}
         GRACE_PERIOD_MINUTES: ${{ inputs.grace-period-minutes }}
-        STALE_LABEL: ${{ inputs.stale-label }}
+        EXCLUSION_LABELS: ${{ inputs.exclusion-labels }}
         COMMENT_TEMPLATE: ${{ inputs.comment-message }}
         MAX_ISSUES_PER_RUN: ${{ inputs.max-issues-per-run }}
         DRY_RUN: ${{ inputs.dry-run }}
@@ -125,7 +125,7 @@ runs:
             gracePeriodDisplay = `${gracePeriodDays} days`;
           }
 
-          const staleLabel = process.env.STALE_LABEL;
+          const exclusionLabelsInput = process.env.EXCLUSION_LABELS;
           const commentTemplate = process.env.COMMENT_TEMPLATE;
           const dryRun = process.env.DRY_RUN === 'true';
 
@@ -135,9 +135,19 @@ runs:
             maxIssuesPerRun = DEFAULT_MAX_ISSUES;
           }
 
-          // Validate stale-label is non-empty
-          if (!staleLabel || staleLabel.trim() === '') {
-            console.error('Error: stale-label input is empty. Cannot proceed.');
+          // Parse and validate exclusion labels
+          if (!exclusionLabelsInput || exclusionLabelsInput.trim() === '') {
+            console.error('Error: exclusion-labels input is empty. Cannot proceed.');
+            return;
+          }
+          
+          const exclusionLabels = exclusionLabelsInput
+            .split(',')
+            .map(label => label.trim())
+            .filter(label => label.length > 0);
+          
+          if (exclusionLabels.length === 0) {
+            console.error('Error: No valid exclusion labels found after parsing. Cannot proceed.');
             return;
           }
 
@@ -146,7 +156,7 @@ runs:
             console.warn('Warning: comment-message does not contain {assignee} placeholder. Unassigned users will not be mentioned.');
           }
 
-          console.log(`Configuration: grace-period=${gracePeriodDisplay}, stale-label="${staleLabel}", max-issues=${maxIssuesPerRun || 'unlimited'}, dry-run=${dryRun}`);
+          console.log(`Configuration: grace-period=${gracePeriodDisplay}, exclusion-labels="${exclusionLabels.join(', ')}", max-issues=${maxIssuesPerRun || 'unlimited'}, dry-run=${dryRun}`);
 
           // Check if repository is archived
           const { data: repo } = await retry(() => github.rest.repos.get({
@@ -159,29 +169,40 @@ runs:
             return;
           }
 
-          // Check if the stale label exists in this repository
-          try {
-            await retry(() => github.rest.issues.getLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: staleLabel
-            }));
-          } catch (error) {
-            if (error.status === 404) {
-              console.log(`Label "${staleLabel}" does not exist in this repository. Skipping.`);
-              return;
+          // Check if at least one exclusion label exists in this repository
+          let validExclusionLabels = [];
+          for (const label of exclusionLabels) {
+            try {
+              await retry(() => github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label
+              }));
+              validExclusionLabels.push(label);
+            } catch (error) {
+              if (error.status === 404) {
+                console.warn(`Label "${label}" does not exist in this repository, skipping this label.`);
+              } else {
+                throw error;
+              }
             }
-            throw error;
           }
+          
+          if (validExclusionLabels.length === 0) {
+            console.log('None of the exclusion labels exist in this repository. Skipping.');
+            return;
+          }
+          
+          console.log(`Using ${validExclusionLabels.length} valid exclusion label(s): ${validExclusionLabels.join(', ')}`);
 
-          // Find open issues with stale label
-          let issues = [];
+
+          // Find all open issues in the repository
+          let allIssues = [];
           try {
-            issues = await retry(() => github.paginate(github.rest.issues.listForRepo, {
+            allIssues = await retry(() => github.paginate(github.rest.issues.listForRepo, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              labels: staleLabel,
               per_page: 100
             }));
           } catch (error) {
@@ -189,7 +210,14 @@ runs:
             throw error;
           }
 
-          console.log(`Found ${issues.length} open issues with "${staleLabel}" label`);
+          // Filter issues that have ANY of the exclusion labels
+          const issues = allIssues.filter(issue => {
+            const issueLabels = issue.labels.map(l => l.name);
+            return validExclusionLabels.some(label => issueLabels.includes(label));
+          });
+
+          console.log(`Found ${issues.length} open issues with any of the exclusion labels: ${validExclusionLabels.join(', ')}`);
+
 
           // Apply max issues limit if set
           if (maxIssuesPerRun > 0 && issues.length > maxIssuesPerRun) {
@@ -274,14 +302,14 @@ runs:
 
               console.log(`Issue #${issue.number}: No open linked PR found, checking grace period...`);
 
-              // Find when stale label was added (get the most recent one in case of re-labeling)
+              // Find when any exclusion label was added (get the most recent one)
               const labelEvents = timelineEvents.filter(event =>
                 event.event === 'labeled' &&
-                event.label?.name === staleLabel
+                validExclusionLabels.includes(event.label?.name)
               );
 
               if (labelEvents.length === 0) {
-                console.log(`Issue #${issue.number}: Could not find label event in timeline, skipping`);
+                console.log(`Issue #${issue.number}: Could not find any exclusion label event in timeline, skipping`);
                 skippedCount++;
                 continue;
               }
