@@ -7,7 +7,6 @@ on:
   pull_request_target:
     types: [opened]
 
-
 jobs:
   PR-Greeting:
     name: Pull Request Greeting
@@ -64,4 +63,3 @@ jobs:
           no_assignee_message: 'The linked issue must be assigned to the PR author.'
           no_issue_message: 'The PR must be linked to an issue assigned to the PR author.'
           skip_users_file_path: '.github/workflows/config/check-pr-issue-skip-usernames.txt'
-  
