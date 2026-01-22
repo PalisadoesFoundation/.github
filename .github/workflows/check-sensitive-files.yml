@@ -59,10 +59,9 @@ jobs:
           HEAD_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
           BASE_SHA=$(git merge-base "${{ github.event.pull_request.base.sha }}" "$HEAD_SHA")
 
-          CHANGED_FILES="$(git diff --name-only --diff-filter=ACMRD "$BASE_SHA" "$HEAD_SHA" | tr '\n' ' ')"
-
-          if [ -n "$CHANGED_FILES" ]; then
-            if ! python3 .github/workflows/scripts/sensitive_file_check.py --config .github/workflows/config/sensitive_files.txt --files $CHANGED_FILES; then
+          mapfile -t CHANGED_FILES < <(git diff --name-only --diff-filter=ACMRD "$BASE_SHA" "$HEAD_SHA")
+          if [ "${`#CHANGED_FILES`[@]}" -gt 0 ]; then
+            if ! python3 .github/workflows/scripts/sensitive_file_check.py --config .github/workflows/config/sensitive_files.txt --files "${CHANGED_FILES[@]}"; then
               echo ""
               echo "To override, add the '${{ inputs.skip-label }}' label to this PR."
               exit 1

@@ -49,7 +49,7 @@ class TestSensitiveFileCheck(unittest.TestCase):
                         ("dir1", [], ["file1.txt", "file2.py"]),
                     ]
                     with patch("os.getcwd", return_value="/root"):
-                         with patch("os.path.relpath", side_effect=lambda p, start: p.replace("/root/", "")):
+                         with patch("os.path.relpath", side_effect=lambda p, _start: p.replace("/root/", "")):
                             files = sensitive_file_check.get_files_to_check(paths)
                             # The logic in script joins root and file. 
                             # If we assume os.walk returns absolute paths or relative to execution,

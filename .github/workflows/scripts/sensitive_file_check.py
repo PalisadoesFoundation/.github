@@ -55,7 +55,7 @@ def get_files_to_check(paths):
     files_to_check = []
     for path in paths:
         if os.path.isfile(path):
-            files_to_check.append(path)
+            files_to_check.append(os.path.relpath(path, os.getcwd()))
         elif os.path.isdir(path):
             for root, _, files in os.walk(path):
                 for file in files:
