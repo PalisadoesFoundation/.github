@@ -95,7 +95,15 @@ def check_files(files, patterns):
 
 
 def main():
-    """Execute the sensitive file check."""
+    """Execute the sensitive file check.
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    """
     parser = argparse.ArgumentParser(
         description="Check for sensitive file changes based on regex patterns."
     )
