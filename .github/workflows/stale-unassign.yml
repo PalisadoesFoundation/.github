@@ -46,8 +46,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           grace-period-minutes: ${{ github.event.inputs.grace-period-minutes || '0' }}
           grace-period-days: ${{ github.event.inputs.grace-period-days || '7' }}
-          # Uncomment to customize the exclusion labels (comma-separated):
-          # exclusion-labels: 'no-issue-activity,on-hold,waiting-for-maintainer'
+          # stale-label: 'no-issue-activity'  # Label that triggers unassignment (default: no-issue-activity)
+          # Uncomment to specify labels that PREVENT unassignment (comma-separated):
+          # exclusion-labels: 'waiting-for-maintainer,blocked,on-hold'
           # Uncomment to customize the comment message:
           # comment-message: |
           #   Hi {assignee}, this issue has been unassigned due to inactivity.
