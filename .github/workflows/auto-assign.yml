@@ -219,8 +219,8 @@ jobs:
               }           
               console.log(`Issue #${issueNumber} creator ${issueCreator} has association: ${issueCreatorAssociation}`);
               
-              // Allow /assign on issues created by OWNER, MEMBER, COLLABORATOR, CONTRIBUTOR, or CodeRabbit bot
-              const allowedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR'];
+              // Allow /assign on issues created by OWNER, MEMBER, COLLABORATOR, or CodeRabbit bot
+              const allowedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR'];
 
               // Troubleshooting logging
               console.log(`DEBUG - Before association check: isCodeRabbitBot = ${isCodeRabbitBot}`);
