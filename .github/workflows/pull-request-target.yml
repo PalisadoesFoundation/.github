@@ -8,9 +8,13 @@ on:
     types: [opened]
 
 jobs:
+  sensitive-check:
+    uses: ./.github/workflows/check-sensitive-files.yml
+
   PR-Greeting:
     name: Pull Request Greeting
     runs-on: ubuntu-latest
+    needs: [sensitive-check]
 
     permissions:
       contents: read
