@@ -54,7 +54,7 @@ runs:
         github-token: ${{ inputs.github-token }}
         script: |
           // Read inputs from environment variables to prevent script injection
-          const DEFAULT_GRACE_PERIOD = 1;
+          const DEFAULT_GRACE_PERIOD = 7;
           const DEFAULT_MAX_ISSUES = 50;
 
           // Helper function for retrying API calls with exponential backoff
@@ -298,10 +298,23 @@ runs:
               // Check for OPEN linked PRs only (ignore closed/merged PRs) AND authored by assignee
               const hasOpenLinkedPR = timelineEvents.some(event => {
                 if (event.event === 'cross-referenced' && event.source?.issue?.pull_request) {
-                  // Check if PR is from the same repository
-                  const prRepoFullName = event.source.issue.repository?.full_name;
+                  // Check if PR is from the same repository by parsing repository_url
+                  const prRepoUrl = event.source.issue.repository_url;
                   const currentRepoFullName = `${context.repo.owner}/${context.repo.repo}`;
-                  const isSameRepo = prRepoFullName === currentRepoFullName;
+                  let isSameRepo = false;
+
+                  if (prRepoUrl) {
+                    // Extract owner/repo from URL (format: https://api.github.com/repos/owner/repo)
+                    const urlMatch = prRepoUrl.match(/\/repos\/([^\/]+\/[^\/]+)$/);
+                    if (urlMatch) {
+                      const prRepoFullName = urlMatch[1];
+                      isSameRepo = prRepoFullName === currentRepoFullName;
+                    } else {
+                      console.log(`Issue #${issue.number}: Could not parse repository_url: ${prRepoUrl}`);
+                    }
+                  } else {
+                    console.log(`Issue #${issue.number}: Missing repository_url for linked PR, treating as different repo`);
+                  }
 
                   // Only count OPEN PRs (ignore closed/merged)
                   const prState = event.source.issue.state;
@@ -317,6 +330,10 @@ runs:
 
                   if (isSameRepo && !isOpen) {
                     console.log(`Issue #${issue.number}: Found closed/merged PR, ignoring`);
+                  }
+
+                  if (!isSameRepo && prRepoUrl) {
+                    console.log(`Issue #${issue.number}: Found linked PR from different repository, ignoring`);
                   }
 
                   return isSameRepo && isOpen && isAuthoredByAssignee;
