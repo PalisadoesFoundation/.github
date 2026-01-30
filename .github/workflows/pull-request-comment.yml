@@ -1,0 +1,41 @@
+name: Comment on First PR
+
+on:
+  workflow_call:
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  comment-on-first-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              return;
+            }
+
+            const author = pr.user.login;
+
+            const pulls = await github.paginate(
+              github.rest.pulls.list,
+              { owner, repo, state: "closed" }
+            );
+
+            const hasMergedBefore = pulls.some(
+              p => p.user.login === author && p.merged_at
+            );
+
+            if (!hasMergedBefore) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: "👋 Thanks for opening your first pull request! A maintainer will review it shortly."
+              });
+            }
