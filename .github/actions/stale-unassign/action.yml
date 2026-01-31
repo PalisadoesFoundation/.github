@@ -366,6 +366,14 @@ runs:
               labelEvents.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
               const latestLabelEvent = labelEvents[labelEvents.length - 1];
               const labelAddedDate = new Date(latestLabelEvent.created_at);
+
+              // Validate that the date is valid
+              if (isNaN(labelAddedDate.getTime())) {
+                console.log(`Issue #${issue.number}: Invalid created_at date in label event (${latestLabelEvent.created_at}), skipping`);
+                skippedCount++;
+                continue;
+              }
+
               const now = new Date();
               const daysSinceLabel = (now - labelAddedDate) / (1000 * 60 * 60 * 24);
 
