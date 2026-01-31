@@ -218,13 +218,27 @@ runs:
           // Find open issues with stale label (the trigger)
           let issues = [];
           try {
-            issues = await retry(() => github.paginate(github.rest.issues.listForRepo, {
+            const limit = maxIssuesPerRun > 0 ? maxIssuesPerRun : Infinity;
+            
+            for await (const response of github.paginate.iterator(github.rest.issues.listForRepo, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
               labels: staleLabel,
               per_page: 100
-            }));
+            })) {
+              issues.push(...response.data);
+              
+              // Break early if we've reached the limit
+              if (issues.length >= limit) {
+                break;
+              }
+            }
+            
+            // Trim to exact limit if needed
+            if (issues.length > limit) {
+              issues = issues.slice(0, limit);
+            }
           } catch (error) {
             console.error(`Error fetching issues: ${error.message}`);
             throw error;
@@ -232,11 +246,8 @@ runs:
 
           console.log(`Found ${issues.length} open issues with stale label "${staleLabel}"`);
 
-
-          // Apply max issues limit if set
-          if (maxIssuesPerRun > 0 && issues.length > maxIssuesPerRun) {
-            console.log(`Limiting to ${maxIssuesPerRun} issues per run (rate limit protection)`);
-            issues = issues.slice(0, maxIssuesPerRun);
+          if (maxIssuesPerRun > 0 && issues.length === maxIssuesPerRun) {
+            console.log(`Limited to ${maxIssuesPerRun} issues per run (rate limit protection)`);
           }
 
           // Helper function to check if issue has any exclusion label
