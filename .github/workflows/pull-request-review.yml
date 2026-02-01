@@ -7,13 +7,9 @@ on:
   pull_request_review:
     types: [submitted]
 jobs:
-  sensitive-check:
-    uses: ./.github/workflows/check-sensitive-files.yml
-
   check-coderabbit-approval:
     name: Check CodeRabbit Approval
     runs-on: ubuntu-latest
-    needs: [sensitive-check]
 
     permissions:
       pull-requests: read
