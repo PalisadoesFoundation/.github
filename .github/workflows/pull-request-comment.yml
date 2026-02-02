@@ -19,24 +19,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # - name: Check if contributor has merged PRs before
-      #   id: check
-      #   uses: actions/github-script@v7
-      #   with:
-      #     script: |
-      #       const owner = context.repo.owner;
-      #       const repo = context.repo.repo;
-      #       const author = context.payload.pull_request.user.login;
+      - name: Check if contributor has merged PRs before
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const author = context.payload.pull_request.user.login;
 
-      #       const { data } = await github.rest.search.issuesAndPullRequests({
-      #         q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
-      #       });
+            const { data } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
+            });
 
-      #       core.setOutput("merged_count", data.total_count);
+            core.setOutput("merged_count", data.total_count);
 
 
       - name: Comment on first PR
-        # if: steps.check.outputs.merged_count == '0'
+        if: steps.check.outputs.merged_count == '0'
         uses: actions/github-script@v7
         with:
           script: |
