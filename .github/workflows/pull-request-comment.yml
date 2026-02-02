@@ -28,11 +28,12 @@ jobs:
             const repo = context.repo.repo;
             const author = context.payload.pull_request.user.login;
 
-            const { data } = await github.search.issuesAndPullRequests({
+            const { data } = await github.rest.search.issuesAndPullRequests({
               q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
             });
 
             core.setOutput("merged_count", data.total_count);
+
 
       - name: Comment on first PR
         if: steps.check.outputs.merged_count == '0'
