@@ -28,7 +28,7 @@ jobs:
             const repo = context.repo.repo;
             const author = context.payload.pull_request.user.login;
 
-            const { data } = await github.rest.search.issues({
+            const { data } = await github.rest.search.issuesAndPullRequests({
               q: `repo:${owner}/${repo} is:pr is:merged author:${author}`
             });
 
