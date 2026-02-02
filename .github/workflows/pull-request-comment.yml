@@ -2,17 +2,6 @@ name: Comment on First-Time Contributor PR
 
 on:
   workflow_call:
-    inputs:
-      comment-body:
-        description: "Comment to post on first PR"
-        required: false
-        type: string
-        default: |
-          👋 Hi @${{ github.actor }}!
-    secrets:
-      token:
-        description: "GitHub token with write access"
-        required: false
 
 jobs:
   first-pr-comment:
@@ -23,7 +12,6 @@ jobs:
         id: check
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.token || github.token }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -39,11 +27,10 @@ jobs:
         if: steps.check.outputs.merged_count == '0'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.token || github.token }}
           script: |
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              body: `${{ inputs.comment-body }}`
+              body: `Thank you for your first contribution! We appreciate your effort and look forward to more contributions in the future.`
             });
