@@ -10,9 +10,6 @@ on:
         default: |
           👋 Hi @${{ github.actor }}!
 
-permissions:
-  pull-requests: write
-  contents: read
 
 jobs:
   first-pr-comment:
@@ -33,7 +30,6 @@ jobs:
             });
 
             core.setOutput("merged_count", data.total_count);
-
 
       - name: Comment on first PR
         if: steps.check.outputs.merged_count == '0'
