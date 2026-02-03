@@ -1,0 +1,461 @@
+name: 'Stale Issue Unassigner'
+description: 'Automatically unassigns stale issues after a grace period'
+author: 'PalisadoesFoundation'
+
+inputs:
+  grace-period-days:
+    description: 'Days after label application before unassignment (for production)'
+    required: false
+    default: '7'
+  grace-period-minutes:
+    description: 'Minutes after label application before unassignment (for testing - overrides days if > 0)'
+    required: false
+    default: '0'
+  dry-run:
+    description: 'Run without making changes. Logs intended actions.'
+    required: false
+    default: 'false'
+  stale-label:
+    description: 'Label that triggers unassignment countdown (e.g., "no-issue-activity")'
+    required: false
+    default: 'no-issue-activity'
+  exclusion-labels:
+    description: 'Comma-separated labels that PREVENT unassignment even if stale-label is present (e.g., "waiting-for-maintainer,blocked"). Leave empty for no exclusions.'
+    required: false
+    default: ''
+  comment-message:
+    description: 'Comment posted when assignee is removed. Use {assignee} placeholder for username.'
+    required: false
+    default: |
+      Hi {assignee}, this issue has been unassigned due to inactivity after being marked as stale.
+      Feel free to reassign yourself if you plan to continue working on it.
+  max-issues-per-run:
+    description: 'Maximum number of issues to process per run (0 for unlimited). Helps avoid rate limiting.'
+    required: false
+    default: '50'
+  github-token:
+    description: 'GitHub token for API calls'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Unassign stale issues
+      uses: actions/github-script@v7
+      env:
+        GRACE_PERIOD_DAYS: ${{ inputs.grace-period-days }}
+        GRACE_PERIOD_MINUTES: ${{ inputs.grace-period-minutes }}
+        STALE_LABEL: ${{ inputs.stale-label }}
+        EXCLUSION_LABELS: ${{ inputs.exclusion-labels }}
+        COMMENT_TEMPLATE: ${{ inputs.comment-message }}
+        MAX_ISSUES_PER_RUN: ${{ inputs.max-issues-per-run }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          // Read inputs from environment variables to prevent script injection
+          const DEFAULT_GRACE_PERIOD = 7;
+          const DEFAULT_MAX_ISSUES = 50;
+
+          // Helper function for retrying API calls with exponential backoff
+          async function retry(fn, retries = 3, delay = 1000) {
+            try {
+              return await fn();
+            } catch (error) {
+              const status = error.status || 0;
+              const isRateLimit = status === 429 || status === 403;
+              const isServerErr = status >= 500;
+              const isNetworkErr = error.message && error.message.includes('network');
+
+              if (retries > 0 && (isServerErr || isNetworkErr || isRateLimit)) {
+                let waitTime = delay;
+
+                // Check Retry-After header
+                if (isRateLimit && error.response && error.response.headers) {
+                  const retryAfter = error.response.headers['retry-after'];
+                  if (retryAfter) {
+                     // Retry-After can be numeric (seconds) or HTTP-date string
+                     const numericValue = parseInt(retryAfter, 10);
+                     let retryAfterMs;
+                     
+                     if (!isNaN(numericValue) && String(numericValue) === retryAfter.trim()) {
+                       // Numeric value in seconds
+                       retryAfterMs = numericValue * 1000;
+                     } else {
+                       // HTTP-date string - parse and compute milliseconds from now
+                       const retryDate = Date.parse(retryAfter);
+                       if (!isNaN(retryDate)) {
+                         retryAfterMs = Math.max(0, retryDate - Date.now());
+                       }
+                     }
+                     
+                     // Only update waitTime if we got a valid number
+                     if (retryAfterMs !== undefined && !isNaN(retryAfterMs)) {
+                       waitTime = Math.max(waitTime, retryAfterMs);
+                     }
+                  }
+                }
+
+                console.warn(`API call failed (${error.message}). Retrying in ${waitTime}ms...`);
+                await new Promise(r => setTimeout(r, waitTime));
+                return retry(fn, retries - 1, delay * 2);
+              }
+              throw error;
+            }
+          }
+
+          // Parse grace period - minutes takes priority over days for testing
+          let gracePeriodMinutes = parseInt(process.env.GRACE_PERIOD_MINUTES, 10);
+          let gracePeriodDays = parseInt(process.env.GRACE_PERIOD_DAYS, 10);
+          
+          // Validate inputs
+          if (!Number.isFinite(gracePeriodMinutes) || gracePeriodMinutes < 0) {
+            gracePeriodMinutes = 0;
+          }
+          if (!Number.isFinite(gracePeriodDays) || gracePeriodDays < 0) {
+            gracePeriodDays = DEFAULT_GRACE_PERIOD;
+          }
+          
+          // Calculate grace period in days (for display and calculation)
+          let gracePeriodInDays;
+          let gracePeriodDisplay;
+          
+          if (gracePeriodMinutes > 0) {
+            // Minutes takes priority (for testing)
+            gracePeriodInDays = gracePeriodMinutes / (60 * 24);
+            gracePeriodDisplay = `${gracePeriodMinutes} minutes`;
+          } else {
+            // Use days (for production)
+            gracePeriodInDays = gracePeriodDays;
+            gracePeriodDisplay = `${gracePeriodDays} days`;
+          }
+
+          const staleLabel = process.env.STALE_LABEL;
+          const exclusionLabelsInput = process.env.EXCLUSION_LABELS;
+          const commentTemplate = process.env.COMMENT_TEMPLATE;
+          const dryRun = process.env.DRY_RUN === 'true';
+
+          let maxIssuesPerRun = parseInt(process.env.MAX_ISSUES_PER_RUN, 10);
+          if (!Number.isFinite(maxIssuesPerRun) || maxIssuesPerRun < 0) {
+            console.warn(`Invalid max-issues-per-run "${process.env.MAX_ISSUES_PER_RUN}", using default: ${DEFAULT_MAX_ISSUES}`);
+            maxIssuesPerRun = DEFAULT_MAX_ISSUES;
+          }
+
+          // Validate stale-label is non-empty (required trigger)
+          if (!staleLabel || staleLabel.trim() === '') {
+            console.error('Error: stale-label input is empty. Cannot proceed.');
+            return;
+          }
+
+          // Parse exclusion labels (optional - can be empty)
+          let exclusionLabels = [];
+          if (exclusionLabelsInput && exclusionLabelsInput.trim() !== '') {
+            exclusionLabels = exclusionLabelsInput
+              .split(',')
+              .map(label => label.trim())
+              .filter(label => label.length > 0);
+          }
+
+          // Warn if comment template doesn't contain {assignee} placeholder
+          if (!commentTemplate.includes('{assignee}')) {
+            console.warn('Warning: comment-message does not contain {assignee} placeholder. Unassigned users will not be mentioned.');
+          }
+
+          const exclusionDisplay = exclusionLabels.length > 0 ? `"${exclusionLabels.join(', ')}"` : 'none';
+          console.log(`Configuration: grace-period=${gracePeriodDisplay}, stale-label="${staleLabel}", exclusion-labels=${exclusionDisplay}, max-issues=${maxIssuesPerRun || 'unlimited'}, dry-run=${dryRun}`);
+
+          // Check if repository is archived
+          const { data: repo } = await retry(() => github.rest.repos.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo
+          }));
+
+          if (repo.archived) {
+            console.log('Repository is archived. Skipping.');
+            return;
+          }
+
+          // Check if the stale label exists in this repository
+          try {
+            await retry(() => github.rest.issues.getLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: staleLabel
+            }));
+          } catch (error) {
+            if (error.status === 404) {
+              console.log(`Stale label "${staleLabel}" does not exist in this repository. Skipping.`);
+              return;
+            }
+            throw error;
+          }
+
+          // Validate exclusion labels exist (optional - warn if not found)
+          let validExclusionLabels = [];
+          for (const label of exclusionLabels) {
+            try {
+              await retry(() => github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label
+              }));
+              validExclusionLabels.push(label);
+            } catch (error) {
+              if (error.status === 404) {
+                console.warn(`Exclusion label "${label}" does not exist in this repository, ignoring.`);
+              } else {
+                throw error;
+              }
+            }
+          }
+          
+          if (validExclusionLabels.length > 0) {
+            console.log(`Using ${validExclusionLabels.length} valid exclusion label(s): ${validExclusionLabels.join(', ')}`);
+          } else if (exclusionLabels.length > 0) {
+            console.log('None of the specified exclusion labels exist in this repository. Proceeding without exclusions.');
+          }
+
+          // Find open issues with stale label (the trigger)
+          let issues = [];
+          try {
+            const limit = maxIssuesPerRun > 0 ? maxIssuesPerRun : Infinity;
+            
+            for await (const response of github.paginate.iterator(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: staleLabel,
+              per_page: 100
+            })) {
+              issues.push(...response.data);
+              
+              // Break early if we've reached the limit
+              if (issues.length >= limit) {
+                break;
+              }
+            }
+            
+            // Trim to exact limit if needed
+            if (issues.length > limit) {
+              issues = issues.slice(0, limit);
+            }
+          } catch (error) {
+            console.error(`Error fetching issues: ${error.message}`);
+            throw error;
+          }
+
+          console.log(`Found ${issues.length} open issues with stale label "${staleLabel}"`);
+
+          if (maxIssuesPerRun > 0 && issues.length === maxIssuesPerRun) {
+            console.log(`Limited to ${maxIssuesPerRun} issues per run (rate limit protection)`);
+          }
+
+          // Helper function to check if issue has any exclusion label
+          function hasExclusionLabel(issue) {
+            if (validExclusionLabels.length === 0) return false;
+            const issueLabels = issue.labels.map(l => l.name);
+            return validExclusionLabels.some(label => issueLabels.includes(label));
+          }
+
+          let processedCount = 0;
+          let skippedCount = 0;
+          let errorCount = 0;
+
+          for (const issue of issues) {
+            try {
+              // Skip pull requests (they appear in issues API too)
+              if (issue.pull_request) {
+                console.log(`Issue #${issue.number}: Is a pull request, skipping`);
+                skippedCount++;
+                continue;
+              }
+
+              // Skip if no assignees
+              if (!issue.assignees || issue.assignees.length === 0) {
+                console.log(`Issue #${issue.number}: No assignees, skipping`);
+                skippedCount++;
+                continue;
+              }
+
+              // Skip if issue has any exclusion label (PREVENTS unassignment)
+              if (hasExclusionLabel(issue)) {
+                const matchedLabels = issue.labels
+                  .map(l => l.name)
+                  .filter(name => validExclusionLabels.includes(name));
+                console.log(`Issue #${issue.number}: Has exclusion label(s) [${matchedLabels.join(', ')}], skipping (protected from unassignment)`);
+                skippedCount++;
+                continue;
+              }
+
+              const assigneeLogins = issue.assignees.map(a => a.login);
+              const assigneeCount = issue.assignees.length;
+              console.log(`Issue #${issue.number}: Has ${assigneeCount} assignee(s)`);
+
+              // Check for linked PRs in the same repository using timeline events
+              let timelineEvents = [];
+              try {
+                timelineEvents = await retry(() => github.paginate(github.rest.issues.listEventsForTimeline, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  per_page: 100
+                }));
+              } catch (error) {
+                console.error(`Issue #${issue.number}: Error fetching timeline: ${error.message}`);
+                skippedCount++;
+                continue;
+              }
+
+              // Check for OPEN linked PRs only (ignore closed/merged PRs) AND authored by assignee
+              const hasOpenLinkedPR = timelineEvents.some(event => {
+                if (event.event === 'cross-referenced' && event.source?.issue?.pull_request) {
+                  // Check if PR is from the same repository by parsing repository_url
+                  const prRepoUrl = event.source.issue.repository_url;
+                  const currentRepoFullName = `${context.repo.owner}/${context.repo.repo}`;
+                  let isSameRepo = false;
+
+                  if (prRepoUrl) {
+                    // Extract owner/repo from URL (format: https://api.github.com/repos/owner/repo)
+                    const urlMatch = prRepoUrl.match(/\/repos\/([^\/]+\/[^\/]+)$/);
+                    if (urlMatch) {
+                      const prRepoFullName = urlMatch[1];
+                      isSameRepo = prRepoFullName === currentRepoFullName;
+                    } else {
+                      console.log(`Issue #${issue.number}: Could not parse repository_url: ${prRepoUrl}`);
+                    }
+                  } else {
+                    console.log(`Issue #${issue.number}: Missing repository_url for linked PR, treating as different repo`);
+                  }
+
+                  // Only count OPEN PRs (ignore closed/merged)
+                  const prState = event.source.issue.state;
+                  const isOpen = prState === 'open';
+
+                  // Check if PR author is one of the assignees
+                  const prAuthor = event.source.issue.user?.login;
+                  const isAuthoredByAssignee = assigneeLogins.includes(prAuthor);
+
+                  if (isSameRepo && isOpen && !isAuthoredByAssignee) {
+                    console.log(`Issue #${issue.number}: Found open PR by different author (@${prAuthor}), ignoring (must be by assignee)`);
+                  }
+
+                  if (isSameRepo && !isOpen) {
+                    console.log(`Issue #${issue.number}: Found closed/merged PR, ignoring`);
+                  }
+
+                  if (!isSameRepo && prRepoUrl) {
+                    console.log(`Issue #${issue.number}: Found linked PR from different repository, ignoring`);
+                  }
+
+                  return isSameRepo && isOpen && isAuthoredByAssignee;
+                }
+                return false;
+              });
+
+              // Skip if there IS an OPEN linked PR (contributor is actively working)
+              if (hasOpenLinkedPR) {
+                console.log(`Issue #${issue.number}: Has open linked PR in same repo, skipping (contributor is working)`);
+                skippedCount++;
+                continue;
+              }
+
+              console.log(`Issue #${issue.number}: No open linked PR found, checking grace period...`);
+
+              // Find when stale label was added (get the most recent one in case of re-labeling)
+              const labelEvents = timelineEvents.filter(event =>
+                event.event === 'labeled' &&
+                event.label?.name === staleLabel
+              );
+
+              if (labelEvents.length === 0) {
+                console.log(`Issue #${issue.number}: Could not find stale label event in timeline, skipping`);
+                skippedCount++;
+                continue;
+              }
+
+              // Sort by date and use the most recent label event
+              labelEvents.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+              const latestLabelEvent = labelEvents[labelEvents.length - 1];
+              const labelAddedDate = new Date(latestLabelEvent.created_at);
+
+              // Validate that the date is valid
+              if (isNaN(labelAddedDate.getTime())) {
+                console.log(`Issue #${issue.number}: Invalid created_at date in label event (${latestLabelEvent.created_at}), skipping`);
+                skippedCount++;
+                continue;
+              }
+
+              const now = new Date();
+              const daysSinceLabel = (now - labelAddedDate) / (1000 * 60 * 60 * 24);
+
+              if (daysSinceLabel < gracePeriodInDays) {
+                console.log(`Issue #${issue.number}: Grace period not exceeded (${daysSinceLabel.toFixed(1)} days / ${gracePeriodDisplay}), skipping`);
+                skippedCount++;
+                continue;
+              }
+
+              console.log(`Issue #${issue.number}: Grace period exceeded (${daysSinceLabel.toFixed(1)} days > ${gracePeriodDisplay}). Processing ${assigneeCount} assignee(s)...`);
+
+
+
+              // Remove all assignees at once (more efficient)
+              try {
+                if (dryRun) {
+                  console.log(`[DRY RUN] Would remove assignees: ${assigneeLogins.join(', ')} from issue #${issue.number}`);
+                } else {
+                  await retry(() => github.rest.issues.removeAssignees({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    assignees: assigneeLogins
+                  }));
+                }
+              } catch (error) {
+                console.error(`Issue #${issue.number}: Error removing assignees: ${error.message}`);
+                errorCount++;
+                skippedCount++;
+                continue;
+              }
+
+              // Post a single comment addressing all unassigned users
+              const assigneeMentions = assigneeLogins.map(login => `@${login}`).join(', ');
+              const comment = commentTemplate.replace(/\{assignee\}/g, assigneeMentions);
+
+              try {
+                if (dryRun) {
+                  console.log(`[DRY RUN] Would post comment to issue #${issue.number}: "${comment.replace(/\n/g, '\\n')}"`);
+                } else {
+                  await retry(() => github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: comment
+                  }));
+                }
+              } catch (error) {
+                console.error(`Issue #${issue.number}: Error posting comment: ${error.message}`);
+                // Don't fail the whole workflow for a comment error
+              }
+
+              console.log(`Issue #${issue.number}: Successfully processed ${assigneeLogins.join(', ')}`);
+              processedCount++;
+
+            } catch (error) {
+              console.error(`Issue #${issue.number}: Unexpected error: ${error.message}`);
+              errorCount++;
+              skippedCount++;
+            }
+          }
+
+          console.log(`\nSummary: Processed ${processedCount}, Skipped ${skippedCount}, Errors ${errorCount}`);
+
+          // Post job summary
+          await core.summary
+            .addHeading('Stale Issue Unassignment Report')
+            .addTable([
+              ['Metric', 'Count'],
+              ['Processed', processedCount.toString()],
+              ['Skipped', skippedCount.toString()],
+              ['Errors', errorCount.toString()]
+            ])
+            .write();
