@@ -18,9 +18,14 @@ class TestSensitiveFileCheck(unittest.TestCase):
     def test_load_patterns_valid(self):
         """Test loading patterns from a valid file."""
         mock_file_content = "pattern1\n# comment\npattern2$"
-        with patch("builtins.open", unittest.mock.mock_open(read_data=mock_file_content)):
+        with patch(
+            "builtins.open",
+            unittest.mock.mock_open(read_data=mock_file_content),
+        ):
             with patch("os.path.exists", return_value=True):
-                patterns = sensitive_file_check.load_patterns("dummy_config.txt")
+                patterns = sensitive_file_check.load_patterns(
+                    "dummy_config.txt"
+                )
                 self.assertEqual(len(patterns), 2)
                 self.assertEqual(patterns[0].pattern, "pattern1")
                 self.assertEqual(patterns[1].pattern, "pattern2$")
@@ -49,17 +54,25 @@ class TestSensitiveFileCheck(unittest.TestCase):
                         ("dir1", [], ["file1.txt", "file2.py"]),
                     ]
                     with patch("os.getcwd", return_value="/root"):
-                         with patch("os.path.relpath", side_effect=lambda p, _start: p.replace("/root/", "")):
-                            files = sensitive_file_check.get_files_to_check(paths)
-                            # The logic in script joins root and file. 
+                        with patch(
+                            "os.path.relpath",
+                            side_effect=lambda p, _start: p.replace(
+                                "/root/", ""
+                            ),
+                        ):
+                            files = sensitive_file_check.get_files_to_check(
+                                paths
+                            )
+                            # The logic in script joins root and file.
                             # If we assume os.walk returns absolute paths or relative to execution,
-                            # we need to match the expectations. 
+                            # we need to match the expectations.
                             # Let's trust the logic simplifies to verifying it iterates.
                             self.assertEqual(len(files), 2)
 
     def test_check_files_sensitive(self):
         """Test checking files with sensitive matches."""
         import re
+
         patterns = [re.compile(r"sensitive\.txt"), re.compile(r"^secret/.*")]
         files = ["sensitive.txt", "safe.txt", "secret/key.pem"]
         matches = sensitive_file_check.check_files(files, patterns)
@@ -70,6 +83,7 @@ class TestSensitiveFileCheck(unittest.TestCase):
     def test_check_files_no_sensitive(self):
         """Test checking files with no sensitive matches."""
         import re
+
         patterns = [re.compile(r"sensitive\.txt")]
         files = ["safe.txt", "another_safe.py"]
         matches = sensitive_file_check.check_files(files, patterns)
