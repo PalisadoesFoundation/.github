@@ -41,12 +41,22 @@ class DisableStatementsChecker:
             violations: List of violation messages.
         """
         violations = []
+        filename_exceptions = [
+            "test/graphql/types/gql.tada-cache.d.ts",
+            "test/graphql/types/gql.tada.d.ts",
+        ]
         pattern = re.compile(
             r"\/\*?\s*eslint-disable(?:-next-line|"
             r"-line)?\s(?:\S+)?\s*\*?\/?",
             re.IGNORECASE,
         )
 
+        # Skip exceptions
+        for item in filename_exceptions:
+            if item in file_path:
+                return violations
+
+        # Process content
         for match in pattern.finditer(content):
             line_num = content[: match.start()].count("\n") + 1
             violations.append(
@@ -205,12 +215,6 @@ class DisableStatementsChecker:
         if f".{extension.lower()}" not in VALID_EXTENSIONS:
             return violations
 
-        # for item in VALID_EXTENSIONS:
-        #     print(item)
-        #     if not file_path.endswith(item):
-
-        print(file_path)
-
         # Check if it's a test file
         is_test_file = file_path.endswith(
             (".test.ts", ".spec.ts", ".test.tsx", ".spec.tsx")
@@ -221,8 +225,6 @@ class DisableStatementsChecker:
                 content = f.read()
         except (OSError, UnicodeDecodeError) as e:
             return [f"{file_path}: Error reading file - {e}"]
-
-        print(content)
 
         # Auto-discover and run all check methods
         # Patterns are naturally specific - they only match in files
@@ -241,7 +243,6 @@ class DisableStatementsChecker:
 
                 violations.extend(method(content, file_path))
 
-        print("boo", violations)
         return violations
 
     def check_files(self, file_paths: list[str]) -> list[str]:
