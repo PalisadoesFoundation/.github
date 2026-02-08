@@ -41,12 +41,22 @@ class DisableStatementsChecker:
             violations: List of violation messages.
         """
         violations = []
+        filename_exceptions = [
+            "test/graphql/types/gql.tada-cache.d.ts",
+            "test/graphql/types/gql.tada.d.ts",
+        ]
         pattern = re.compile(
             r"\/\*?\s*eslint-disable(?:-next-line|"
             r"-line)?\s(?:\S+)?\s*\*?\/?",
             re.IGNORECASE,
         )
 
+        # Skip exceptions
+        for item in filename_exceptions:
+            if item in file_path:
+                return violations
+
+        # Process content
         for match in pattern.finditer(content):
             line_num = content[: match.start()].count("\n") + 1
             violations.append(
