@@ -215,12 +215,6 @@ class DisableStatementsChecker:
         if f".{extension.lower()}" not in VALID_EXTENSIONS:
             return violations
 
-        # for item in VALID_EXTENSIONS:
-        #     print(item)
-        #     if not file_path.endswith(item):
-
-        print(file_path)
-
         # Check if it's a test file
         is_test_file = file_path.endswith(
             (".test.ts", ".spec.ts", ".test.tsx", ".spec.tsx")
@@ -231,8 +225,6 @@ class DisableStatementsChecker:
                 content = f.read()
         except (OSError, UnicodeDecodeError) as e:
             return [f"{file_path}: Error reading file - {e}"]
-
-        print(content)
 
         # Auto-discover and run all check methods
         # Patterns are naturally specific - they only match in files
@@ -251,7 +243,6 @@ class DisableStatementsChecker:
 
                 violations.extend(method(content, file_path))
 
-        print("boo", violations)
         return violations
 
     def check_files(self, file_paths: list[str]) -> list[str]:
