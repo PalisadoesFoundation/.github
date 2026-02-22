@@ -2,7 +2,6 @@ name: Do not use the npm command
 
 on:
   workflow_call:
-  pull_request:
 
 jobs:
   Detect-NPM:
