@@ -14,7 +14,7 @@ jobs:
         run: |
           LOCATIONS=".github/workflows docs/docs package.json"
 
-          if grep -rE '\bnpm\b' "$LOCATIONS"; then
+          if grep -rE '^[^#]*\bnpm\b' "$LOCATIONS"; then
             echo "::error::Forbidden 'npm' command found in one or more workflow files!"
             echo "Please use 'pnpm' instead."
             exit 1
