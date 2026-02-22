@@ -1,0 +1,23 @@
+name: Do not use the npm command
+
+on:
+  workflow_call:
+
+jobs:
+  Detect-NPM:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Scan workflow file for forbidden npm commands
+        run: |
+          LOCATIONS=".github/workflows docs/docs package.json"
+
+          if grep -rE '^[^#]*\bnpm\b' "$LOCATIONS"; then
+            echo "::error::Forbidden 'npm' command found in one or more workflow files!"
+            echo "Please use 'pnpm' instead."
+            exit 1
+          else
+            echo "No forbidden 'npm' commands found. The job can proceed."
+          fi
