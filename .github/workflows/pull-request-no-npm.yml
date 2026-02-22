@@ -12,10 +12,9 @@ jobs:
 
       - name: Scan workflow file for forbidden npm commands
         run: |
-          FORBIDDEN_COMMAND="npm "
           WORKFLOW_DIRECTORY=".github/workflows"
 
-          if grep -rq "$FORBIDDEN_COMMAND" "$WORKFLOW_DIRECTORY"; then
+          if grep -rE '\bnpm\b' "$WORKFLOW_DIRECTORY"; then
             echo "::error::Forbidden 'npm' command found in one or more workflow files!"
             echo "Please use 'pnpm' instead."
             exit 1
