@@ -3,7 +3,7 @@ The [Palisadoes Foundation](https://www.palisadoes.org) sponsors open-source sof
 
 ### Our Community
 
-- [Join the community!](https://community.talawa.io/index.php)
+- [Join the community!](https://community.palisadoes.org)
 
 We are no longer using slack. 
 
